@@ -1,4 +1,4 @@
-@SnackCounter.API_HostAddress = http://localhost:5000
+@SnackCounter.API_HostAddress = http://localhost:5090
 
 ### Health
 GET {{SnackCounter.API_HostAddress}}/health
