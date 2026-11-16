@@ -211,4 +211,27 @@ app.MapPost("/api/reports/monthly/{officeId:guid}", async (
     return report is null ? Results.NotFound() : Results.Ok(report);
 });
 
+
+app.MapPost("/api/purchases/{purchaseId:guid}/hr-reimbursed", async (
+    Guid purchaseId, IReimbursementRepository repository, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        await repository.MarkReimbursedAsync(purchaseId, cancellationToken);
+        return Results.Ok(new { PurchaseId = purchaseId, Status = "Reimbursed" });
+    }
+    catch (InvalidOperationException ex) { return Results.Conflict(ex.Message); }
+});
+
+app.MapPost("/api/purchases/{purchaseId:guid}/hr-rejected", async (
+    Guid purchaseId, string reason, IReimbursementRepository repository, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        await repository.MarkRejectedAsync(purchaseId, reason, cancellationToken);
+        return Results.Ok(new { PurchaseId = purchaseId, Status = "Rejected", Reason = reason });
+    }
+    catch (InvalidOperationException ex) { return Results.Conflict(ex.Message); }
+});
+
 app.Run();
