@@ -35,4 +35,22 @@ public sealed class ReimbursementRepository : IReimbursementRepository
         claim.RecordSubmissionFailure(reason);
         await _db.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task MarkReimbursedAsync(Guid purchaseId, CancellationToken cancellationToken)
+    {
+        var claim = await _db.Reimbursements.SingleAsync(x => x.PurchaseId == purchaseId, cancellationToken);
+        var request = await _db.RefillRequests.SingleAsync(
+            x => x.Id == (from p in _db.Purchases where p.Id == purchaseId select p.RefillRequestId).Single(),
+            cancellationToken);
+        claim.MarkReimbursed();
+        request.MarkReimbursed();
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task MarkRejectedAsync(Guid purchaseId, string reason, CancellationToken cancellationToken)
+    {
+        var claim = await _db.Reimbursements.SingleAsync(x => x.PurchaseId == purchaseId, cancellationToken);
+        claim.MarkRejected(reason);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 }
