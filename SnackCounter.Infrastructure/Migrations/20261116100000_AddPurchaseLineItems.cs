@@ -6,7 +6,6 @@ using SnackCounter.Infrastructure.Data;
 
 namespace SnackCounter.Infrastructure.Migrations;
 
-[DbContext(typeof(AppDbContext))]
 [Migration("20261116100000_AddPurchaseLineItems")]
 public partial class AddPurchaseLineItems : Migration
 {
