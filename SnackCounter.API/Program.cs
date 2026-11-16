@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SnackCounter.API.Contracts;
 using SnackCounter.Application.Interfaces;
+using SnackCounter.Application.Models;
 using SnackCounter.Application.Services;
 using SnackCounter.Infrastructure.Data;
 using SnackCounter.Infrastructure.Data.Repositories;
