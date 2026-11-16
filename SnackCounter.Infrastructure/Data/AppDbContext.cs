@@ -113,6 +113,10 @@ public class AppDbContext : DbContext
             .HasPrecision(18, 2);
 
         modelBuilder.Entity<Purchase>()
+            .Property(p => p.UnitPrice)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Purchase>()
             .Property(p => p.TotalAmount)
             .HasPrecision(18, 2);
 
