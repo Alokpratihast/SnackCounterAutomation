@@ -47,6 +47,7 @@ builder.Services.AddScoped<IReimbursementRepository, ReimbursementRepository>();
 builder.Services.AddScoped<ReimbursementSubmissionService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<BudgetConfigurationService>();
+builder.Services.AddScoped<DemoSeedService>();
 builder.Services.AddScoped<IMonthlyReportService, MonthlyReportService>();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -232,6 +233,23 @@ app.MapPost("/api/purchases/{purchaseId:guid}/hr-rejected", async (
         return Results.Ok(new { PurchaseId = purchaseId, Status = "Rejected", Reason = reason });
     }
     catch (InvalidOperationException ex) { return Results.Conflict(ex.Message); }
+});
+
+
+app.MapPost("/api/demo/seed", async (DemoSeedService service, CancellationToken cancellationToken) =>
+    Results.Ok(await service.SeedAsync(cancellationToken)));
+
+app.MapPut("/api/inventory/{officeId:guid}/{productId:guid}/count", async (
+    Guid officeId, Guid productId, ManualInventoryCountRequest request,
+    AppDbContext db, CancellationToken cancellationToken) =>
+{
+    if (request.Quantity < 0) return Results.BadRequest("Quantity cannot be negative.");
+    var inventory = await db.Inventories.SingleOrDefaultAsync(
+        x => x.OfficeId == officeId && x.ProductId == productId, cancellationToken);
+    if (inventory is null) return Results.NotFound("Inventory record not found.");
+    inventory.UpdateStock(request.Quantity);
+    await db.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new { inventory.OfficeId, inventory.ProductId, inventory.CurrentQuantity, inventory.MinimumQuantity, inventory.LastUpdatedAtUtc });
 });
 
 app.Run();
