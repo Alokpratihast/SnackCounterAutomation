@@ -1,6 +1,97 @@
-@SnackCounter.API_HostAddress = http://localhost:5090
+@SnackCounter.API_HostAddress = http://localhost:5000
 
-GET {{SnackCounter.API_HostAddress}}/weatherforecast/
+### Health
+GET {{SnackCounter.API_HostAddress}}/health
 Accept: application/json
 
-###
+### Seed demo offices, volunteers, products, inventory and current-month budgets
+POST {{SnackCounter.API_HostAddress}}/api/demo/seed
+Content-Type: application/json
+
+{}
+
+### Update a physical inventory count (use IDs from seed response)
+PUT {{SnackCounter.API_HostAddress}}/api/inventory/{{officeId}}/{{productId}}/count
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### Create low-stock refill request
+POST {{SnackCounter.API_HostAddress}}/api/refill-requests/low-stock
+Content-Type: application/json
+
+{
+  "officeId": "{{officeId}}",
+  "productId": "{{productId}}"
+}
+
+### Accept assignment (use assigned volunteer ID from creation response)
+POST {{SnackCounter.API_HostAddress}}/api/refill-requests/{{requestId}}/accept
+Content-Type: application/json
+
+{
+  "volunteerId": "{{volunteerId}}"
+}
+
+### Configure monthly budget (Oslo 6000 NOK / Bengaluru 15000 INR)
+PUT {{SnackCounter.API_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "officeId": "{{officeId}}",
+  "year": 2026,
+  "month": 11,
+  "monthlyLimit": 6000
+}
+
+### Record purchase (total is calculated by server)
+POST {{SnackCounter.API_HostAddress}}/api/refill-requests/{{requestId}}/purchase
+Content-Type: application/json
+
+{
+  "volunteerId": "{{volunteerId}}",
+  "quantity": 5,
+  "unitPrice": 20.00,
+  "currencyCode": "NOK",
+  "receiptUrl": "https://example.test/receipts/receipt-001.jpg"
+}
+
+### Retry a pending HR claim
+POST {{SnackCounter.API_HostAddress}}/api/purchases/{{purchaseId}}/retry-hr-claim
+
+### Simulate HR reimbursement callback
+POST {{SnackCounter.API_HostAddress}}/api/purchases/{{purchaseId}}/hr-reimbursed
+
+### Simulate HR rejection callback
+POST {{SnackCounter.API_HostAddress}}/api/purchases/{{purchaseId}}/hr-rejected
+Content-Type: application/json
+
+{
+  "reason": "Receipt image is not readable."
+}
+
+### Monthly report without currency conversion (original currency totals only)
+POST {{SnackCounter.API_HostAddress}}/api/reports/monthly/{{officeId}}
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "month": 11,
+  "reportingCurrency": "",
+  "ratesToReportingCurrency": {}
+}
+
+### Monthly report converted to INR (example rate: 1 NOK = 8.2 INR; replace with dated trusted rate)
+POST {{SnackCounter.API_HostAddress}}/api/reports/monthly/{{officeId}}
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "month": 11,
+  "reportingCurrency": "INR",
+  "ratesToReportingCurrency": {
+    "NOK": 8.2
+  }
+}
