@@ -139,7 +139,7 @@ app.MapPost("/api/refill-requests/{requestId:guid}/accept", async (
             Results.Conflict(result),
 
         VolunteerAcceptanceStatus.WrongVolunteer =>
-            Results.Forbid(),
+            Results.Conflict(new { Message = "This assignment belongs to another volunteer." }),
 
         VolunteerAcceptanceStatus.AssignmentExpired =>
             Results.Conflict(result),
