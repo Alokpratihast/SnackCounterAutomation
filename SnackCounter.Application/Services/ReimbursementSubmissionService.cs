@@ -20,6 +20,8 @@ public sealed class ReimbursementSubmissionService
             return false;
         if (data.Claim.Status == "Submitted" || data.Claim.Status == "Reimbursed")
             return true;
+        if (data.Claim.Status != "Pending")
+            return false;
 
         try
         {
