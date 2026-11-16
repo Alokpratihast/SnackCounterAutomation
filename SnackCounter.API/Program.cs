@@ -225,12 +225,12 @@ app.MapPost("/api/purchases/{purchaseId:guid}/hr-reimbursed", async (
 });
 
 app.MapPost("/api/purchases/{purchaseId:guid}/hr-rejected", async (
-    Guid purchaseId, string reason, IReimbursementRepository repository, CancellationToken cancellationToken) =>
+    Guid purchaseId, HrRejectionRequest request, IReimbursementRepository repository, CancellationToken cancellationToken) =>
 {
     try
     {
-        await repository.MarkRejectedAsync(purchaseId, reason, cancellationToken);
-        return Results.Ok(new { PurchaseId = purchaseId, Status = "Rejected", Reason = reason });
+        await repository.MarkRejectedAsync(purchaseId, request.Reason, cancellationToken);
+        return Results.Ok(new { PurchaseId = purchaseId, Status = "Rejected", request.Reason });
     }
     catch (InvalidOperationException ex) { return Results.Conflict(ex.Message); }
 });
