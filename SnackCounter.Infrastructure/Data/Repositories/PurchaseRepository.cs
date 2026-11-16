@@ -29,14 +29,13 @@ public sealed class PurchaseRepository : IPurchaseRepository
         var request = await db.RefillRequests.SingleOrDefaultAsync(
             x => x.Id == command.RefillRequestId, cancellationToken);
         if (request is null) return new(RecordPurchaseStatus.RequestNotFound);
+        var duplicate = await db.Purchases.AnyAsync(
+            x => x.RefillRequestId == request.Id, cancellationToken);
+        if (duplicate) return new(RecordPurchaseStatus.DuplicatePurchase);
         if (request.Status != RefillStatus.Accepted)
             return new(RecordPurchaseStatus.RequestNotAccepted);
         if (request.AssignedVolunteerId != command.VolunteerId)
             return new(RecordPurchaseStatus.WrongVolunteer);
-
-        var duplicate = await db.Purchases.AnyAsync(
-            x => x.RefillRequestId == request.Id, cancellationToken);
-        if (duplicate) return new(RecordPurchaseStatus.DuplicatePurchase);
 
         var employee = await db.Employees.SingleOrDefaultAsync(
             x => x.Id == command.VolunteerId, cancellationToken);
