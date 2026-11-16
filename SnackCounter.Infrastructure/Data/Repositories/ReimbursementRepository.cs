@@ -39,9 +39,9 @@ public sealed class ReimbursementRepository : IReimbursementRepository
     public async Task MarkReimbursedAsync(Guid purchaseId, CancellationToken cancellationToken)
     {
         var claim = await _db.Reimbursements.SingleAsync(x => x.PurchaseId == purchaseId, cancellationToken);
+        var purchase = await _db.Purchases.SingleAsync(x => x.Id == purchaseId, cancellationToken);
         var request = await _db.RefillRequests.SingleAsync(
-            x => x.Id == (from p in _db.Purchases where p.Id == purchaseId select p.RefillRequestId).Single(),
-            cancellationToken);
+            x => x.Id == purchase.RefillRequestId, cancellationToken);
         claim.MarkReimbursed();
         request.MarkReimbursed();
         await _db.SaveChangesAsync(cancellationToken);
