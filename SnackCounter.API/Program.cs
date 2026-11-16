@@ -176,7 +176,7 @@ app.MapPost("/api/refill-requests/{requestId:guid}/purchase", async (
     {
         RecordPurchaseStatus.Purchased => Results.Created($"/api/purchases/{result.PurchaseId}", result),
         RecordPurchaseStatus.RequestNotFound => Results.NotFound(result),
-        RecordPurchaseStatus.InventoryNotFound => Results.NotFound(result),
+        RecordPurchaseStatus.InventoryNotFound or RecordPurchaseStatus.ProductNotFound => Results.NotFound(result),
         RecordPurchaseStatus.BudgetNotFound or RecordPurchaseStatus.BudgetExceeded or RecordPurchaseStatus.DuplicatePurchase => Results.Conflict(result),
         RecordPurchaseStatus.RequestNotAccepted or RecordPurchaseStatus.WrongVolunteer or RecordPurchaseStatus.VolunteerNotEligible => Results.Conflict(result),
         RecordPurchaseStatus.CurrencyMismatch => Results.BadRequest(result),
