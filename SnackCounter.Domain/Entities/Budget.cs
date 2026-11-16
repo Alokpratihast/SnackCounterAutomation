@@ -58,6 +58,14 @@ public class Budget
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
     }
 
+    public void UpdateMonthlyLimit(decimal monthlyLimit)
+    {
+        if (monthlyLimit <= 0) throw new ArgumentException("Budget must be greater than zero.");
+        if (monthlyLimit < ActualSpent + ReservedAmount)
+            throw new InvalidOperationException("New budget cannot be lower than committed and reserved spend.");
+        MonthlyLimit = monthlyLimit;
+    }
+
     public bool CanSpend(decimal amount)
     {
         return amount > 0 && amount <= AvailableBudget;

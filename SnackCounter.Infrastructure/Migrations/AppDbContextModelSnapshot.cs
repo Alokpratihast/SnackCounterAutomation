@@ -218,6 +218,13 @@ namespace SnackCounter.Infrastructure.Migrations
                     b.Property<Guid>("RefillRequestId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
@@ -247,6 +254,10 @@ namespace SnackCounter.Infrastructure.Migrations
 
                     b.Property<Guid?>("AssignedVolunteerId")
                         .HasColumnType("TEXT");
+
+                    b.Property<long>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
