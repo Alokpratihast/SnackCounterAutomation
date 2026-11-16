@@ -6,10 +6,15 @@ namespace SnackCounter.Application.Services;
 public sealed class PurchaseService
 {
     private readonly IPurchaseRepository _repository;
+    private readonly ReimbursementSubmissionService _reimbursements;
 
-    public PurchaseService(IPurchaseRepository repository) => _repository = repository;
+    public PurchaseService(IPurchaseRepository repository, ReimbursementSubmissionService reimbursements)
+    {
+        _repository = repository;
+        _reimbursements = reimbursements;
+    }
 
-    public Task<RecordPurchaseResult> RecordAsync(
+    public async Task<RecordPurchaseResult> RecordAsync(
         RecordPurchaseCommand command,
         CancellationToken cancellationToken = default)
     {
@@ -21,6 +26,18 @@ public sealed class PurchaseService
             throw new ArgumentException("Unit price must be positive and have at most two decimal places.");
         if (string.IsNullOrWhiteSpace(command.CurrencyCode)) throw new ArgumentException("Currency is required.");
         if (string.IsNullOrWhiteSpace(command.ReceiptUrl)) throw new ArgumentException("Receipt reference is required.");
-        return _repository.RecordPurchaseAsync(command, cancellationToken);
+
+        var result = await _repository.RecordPurchaseAsync(command, cancellationToken);
+        if (result.Status == RecordPurchaseStatus.Purchased && result.PurchaseId.HasValue)
+        {
+            var submitted = await _reimbursements.SubmitAsync(result.PurchaseId.Value, cancellationToken);
+            return result with
+            {
+                Message = submitted
+                    ? "Purchase recorded and HR claim submitted."
+                    : "Purchase recorded. HR claim remains pending and can be retried."
+            };
+        }
+        return result;
     }
 }
