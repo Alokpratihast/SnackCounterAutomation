@@ -6,7 +6,6 @@ using SnackCounter.Infrastructure.Data;
 
 namespace SnackCounter.Infrastructure.Migrations;
 
-[DbContext(typeof(AppDbContext))]
 [Migration("20261116103000_AddRefillRequestConcurrencyVersion")]
 public partial class AddRefillRequestConcurrencyVersion : Migration
 {
