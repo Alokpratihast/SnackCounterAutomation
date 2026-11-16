@@ -5,7 +5,7 @@ A .NET 10 backend proof-of-concept for coordinating snack refills across Oslo an
 ## Implemented workflow
 
 - Office/product inventory with volunteer-entered stock counts and low-stock thresholds.
-- One active refill request per office/product, round-robin assignment within the volunteer's home office, one-hour acceptance window, and expired-assignment reassignment.
+- One active refill request per office/product, manual volunteer availability, round-robin assignment within the volunteer's home office, one-hour acceptance window, and expired-assignment reassignment.
 - Purchase restricted to the volunteer assigned to an accepted request.
 - Purchase, inventory increment, monthly budget commit, reservation ledger entry, and refill status transition are persisted in one SQLite write transaction.
 - Duplicate purchase protection through lifecycle checks, an immediate SQLite write transaction, and a unique purchase-per-refill index.
@@ -46,11 +46,11 @@ The API applies EF Core migrations at startup. Default SQLite connection: `Data 
 1. Start the API and call `POST /api/demo/seed`. Save the returned office IDs.
 2. Read inventory from the SQLite database or use the seeded coffee product. Set a stock count with `PUT /api/inventory/{officeId}/{productId}/count`.
 3. Create a low-stock refill using `POST /api/refill-requests/low-stock`. Save the request ID and assigned volunteer ID.
-4. Accept with `POST /api/refill-requests/{requestId}/accept`.
+4. Optionally change volunteer availability with `PUT /api/volunteers/{volunteerId}/availability`, then accept with `POST /api/refill-requests/{requestId}/accept`.
 5. Configure the current month budget with `PUT /api/budgets` if it has not been seeded.
 6. Submit purchase with `POST /api/refill-requests/{requestId}/purchase`. Use a receipt URL/reference and the office currency.
 7. If the simulated HR adapter fails, retry with `POST /api/purchases/{purchaseId}/retry-hr-claim`.
-8. Simulate HR reconciliation with `POST /api/purchases/{purchaseId}/hr-reimbursed` or `POST /api/purchases/{purchaseId}/hr-rejected`.
+8. Inspect claim status with `GET /api/purchases/{purchaseId}/reimbursement`. Simulate HR reconciliation with `POST /api/purchases/{purchaseId}/hr-reimbursed` or `POST /api/purchases/{purchaseId}/hr-rejected`.
 9. Request the monthly report with `POST /api/reports/monthly/{officeId}`.
 
 See [SnackCounter.API/SnackCounter.API.http](SnackCounter.API/SnackCounter.API.http) for request examples and [DESIGN.md](DESIGN.md) for decisions and limitations.
