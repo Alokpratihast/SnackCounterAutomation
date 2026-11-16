@@ -8,4 +8,6 @@ public interface IReimbursementRepository
         Guid purchaseId, CancellationToken cancellationToken);
     Task MarkSubmittedAsync(Guid purchaseId, string externalClaimId, CancellationToken cancellationToken);
     Task RecordSubmissionFailureAsync(Guid purchaseId, string reason, CancellationToken cancellationToken);
+    Task MarkReimbursedAsync(Guid purchaseId, CancellationToken cancellationToken);
+    Task MarkRejectedAsync(Guid purchaseId, string reason, CancellationToken cancellationToken);
 }
