@@ -70,7 +70,27 @@ public class AppDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<RefillRequest>()
-            .HasIndex(r => new { r.OfficeId, r.ProductId, r.Status });
+            .HasOne<Office>()
+            .WithMany()
+            .HasForeignKey(r => r.OfficeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefillRequest>()
+            .HasOne<Product>()
+            .WithMany()
+            .HasForeignKey(r => r.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefillRequest>()
+            .HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(r => r.AssignedVolunteerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefillRequest>()
+            .HasIndex(r => new { r.OfficeId, r.ProductId })
+            .IsUnique()
+            .HasFilter("\"Status\" IN (1, 2, 3)");
 
         modelBuilder.Entity<Purchase>()
             .HasIndex(p => p.RefillRequestId)
