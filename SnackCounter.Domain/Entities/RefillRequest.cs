@@ -1,3 +1,4 @@
+
 using SnackCounter.Domain.Enums;
 
 namespace SnackCounter.Domain.Entities;
@@ -11,6 +12,8 @@ public class RefillRequest
     public Guid ProductId { get; private set; }
 
     public RefillStatus Status { get; private set; }
+
+    public long ConcurrencyVersion { get; private set; }
 
     public Guid? AssignedVolunteerId { get; private set; }
 
@@ -55,6 +58,8 @@ public class RefillRequest
         AssignedAtUtc = DateTime.UtcNow;
         AcceptedAtUtc = null;
         Status = RefillStatus.Assigned;
+
+        ConcurrencyVersion++;
     }
 
     public void AcceptAssignment(Guid volunteerId)
@@ -63,10 +68,13 @@ public class RefillRequest
             throw new InvalidOperationException("No active assignment.");
 
         if (AssignedVolunteerId != volunteerId)
-            throw new InvalidOperationException("This assignment belongs to another volunteer.");
+            throw new InvalidOperationException(
+                "This assignment belongs to another volunteer.");
 
         AcceptedAtUtc = DateTime.UtcNow;
         Status = RefillStatus.Accepted;
+
+        ConcurrencyVersion++;
     }
 
     public void MarkPurchased()
@@ -77,6 +85,8 @@ public class RefillRequest
 
         PurchasedAtUtc = DateTime.UtcNow;
         Status = RefillStatus.Purchased;
+
+        ConcurrencyVersion++;
     }
 
     public void MarkReimbursed()
@@ -87,6 +97,8 @@ public class RefillRequest
 
         ReimbursedAtUtc = DateTime.UtcNow;
         Status = RefillStatus.Reimbursed;
+
+        ConcurrencyVersion++;
     }
 
     public void ExpireAssignment()
@@ -97,6 +109,18 @@ public class RefillRequest
 
         Status = RefillStatus.Expired;
         AssignedVolunteerId = null;
-        
+
+        ConcurrencyVersion++;
+    }
+
+    public void ReturnToPending()
+    {
+        if (Status != RefillStatus.Expired)
+            throw new InvalidOperationException(
+                "Only expired requests can return to pending.");
+
+        Status = RefillStatus.Pending;
+
+        ConcurrencyVersion++;
     }
 }

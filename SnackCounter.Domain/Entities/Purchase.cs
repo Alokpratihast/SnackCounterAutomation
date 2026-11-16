@@ -9,6 +9,10 @@ public class Purchase
 
     public Guid VolunteerId { get; private set; }
 
+    public int Quantity { get; private set; }
+
+    public decimal UnitPrice { get; private set; }
+
     public decimal TotalAmount { get; private set; }
 
     public string CurrencyCode { get; private set; } = string.Empty;
@@ -22,7 +26,8 @@ public class Purchase
     public Purchase(
         Guid refillRequestId,
         Guid volunteerId,
-        decimal totalAmount,
+        int quantity,
+        decimal unitPrice,
         string currencyCode,
         string receiptUrl)
     {
@@ -32,8 +37,11 @@ public class Purchase
         if (volunteerId == Guid.Empty)
             throw new ArgumentException("Volunteer is required.");
 
-        if (totalAmount <= 0)
-            throw new ArgumentException("Purchase amount must be greater than zero.");
+        if (quantity <= 0)
+            throw new ArgumentException("Quantity must be greater than zero.");
+
+        if (unitPrice <= 0)
+            throw new ArgumentException("Unit price must be greater than zero.");
 
         if (string.IsNullOrWhiteSpace(currencyCode))
             throw new ArgumentException("Currency is required.");
@@ -44,7 +52,9 @@ public class Purchase
         Id = Guid.NewGuid();
         RefillRequestId = refillRequestId;
         VolunteerId = volunteerId;
-        TotalAmount = totalAmount;
+        Quantity = quantity;
+        UnitPrice = unitPrice;
+        TotalAmount = quantity * unitPrice;
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
         ReceiptUrl = receiptUrl.Trim();
         PurchasedAtUtc = DateTime.UtcNow;

@@ -9,11 +9,17 @@ using SnackCounter.Infrastructure.Integrations.HR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=snackcounter.db"));
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=snackcounter.db";
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
+
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
+
+    
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 builder.Services.AddScoped<IVolunteerAssignmentService,
@@ -30,9 +36,9 @@ builder.Services.AddScoped<IHRReimbursementService,
 
 
 builder.Services.AddScoped<IRefillRequestRepository, RefillRequestRepository>();
-
 builder.Services.AddScoped<LowStockRefillRequestService>();
-
+builder.Services.AddScoped<VolunteerAcceptanceService>();
+builder.Services.AddScoped<AssignmentReassignmentService>();
 builder.Services.AddEndpointsApiExplorer();
 
 
@@ -97,5 +103,55 @@ app.MapPost("/api/refill-requests/low-stock", async (
         _ => Results.BadRequest(result)
     };
 });
+
+
+
+app.MapPost("/api/refill-requests/{requestId:guid}/accept", async (
+    Guid requestId,
+    AcceptRefillRequestRequest request,
+    VolunteerAcceptanceService service,
+    CancellationToken cancellationToken) =>
+{
+    var result = await service.AcceptAsync(
+        requestId,
+        request.VolunteerId,
+        cancellationToken);
+
+    return result.Status switch
+    {
+        VolunteerAcceptanceStatus.Accepted =>
+            Results.Ok(result),
+
+        VolunteerAcceptanceStatus.RequestNotFound =>
+            Results.NotFound(result),
+
+        VolunteerAcceptanceStatus.NotAssigned =>
+            Results.Conflict(result),
+
+        VolunteerAcceptanceStatus.WrongVolunteer =>
+            Results.Forbid(),
+
+        VolunteerAcceptanceStatus.AssignmentExpired =>
+            Results.Conflict(result),
+
+        _ => Results.BadRequest(result)
+    };
+});
+
+
+app.MapPost("/api/refill-requests/process-expired", async (
+    AssignmentReassignmentService service,
+    CancellationToken cancellationToken) =>
+{
+    var count = await service.ProcessExpiredAssignmentsAsync(
+        cancellationToken);
+
+    return Results.Ok(new
+    {
+        ReassignedCount = count,
+        Message = $"{count} expired assignment(s) processed."
+    });
+});
+
 
 app.Run();

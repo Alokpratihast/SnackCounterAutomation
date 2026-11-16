@@ -1,7 +1,8 @@
 
+using SnackCounter.Application.Exceptions;
 using SnackCounter.Application.Interfaces;
 using SnackCounter.Domain.Entities;
-using SnackCounter.Application.Exceptions;
+
 namespace SnackCounter.Application.Services;
 
 public enum RefillRequestCreationStatus
@@ -74,7 +75,9 @@ public class LowStockRefillRequestService
 
         var request = new RefillRequest(officeId, productId);
 
-        var volunteers = await _repository.GetAvailableVolunteersAsync(
+        // Load all volunteers, including unavailable ones,
+        // so the persistent rotation position is preserved.
+        var volunteers = await _repository.GetAllVolunteersAsync(
             officeId, cancellationToken);
 
         var lastAssignedVolunteerId =
@@ -87,19 +90,27 @@ public class LowStockRefillRequestService
             lastAssignedVolunteerId);
 
         if (selectedVolunteer is not null)
+        {
             request.AssignVolunteer(selectedVolunteer.Id);
+
+            // Update the office rotation cursor.
+            // Both changes are persisted by the same SaveChanges call.
+            await _repository.UpdateOfficeRotationAsync(
+                officeId,
+                selectedVolunteer.Id,
+                cancellationToken);
+        }
 
         await _repository.AddAsync(request, cancellationToken);
 
-try
-{
-    await _repository.SaveChangesAsync(cancellationToken);
-}
-catch (DuplicateActiveRefillRequestException)
-{
-    return new(
-        RefillRequestCreationStatus.AlreadyExists);
-}
+        try
+        {
+            await _repository.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateActiveRefillRequestException)
+        {
+            return new(RefillRequestCreationStatus.AlreadyExists);
+        }
 
         if (selectedVolunteer is null)
         {
