@@ -3,7 +3,7 @@ namespace SnackCounter.Application.Models;
 public enum RecordPurchaseStatus
 {
     Purchased, RequestNotFound, RequestNotAccepted, WrongVolunteer,
-    InventoryNotFound, BudgetNotFound, CurrencyMismatch, BudgetExceeded,
+    InventoryNotFound, ProductNotFound, BudgetNotFound, CurrencyMismatch, BudgetExceeded,
     DuplicatePurchase, VolunteerNotEligible
 }
 
