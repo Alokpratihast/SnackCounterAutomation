@@ -1,6 +1,7 @@
 
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using SnackCounter.Application.Interfaces;
 using SnackCounter.Application.Services;
 using SnackCounter.Domain.Entities;
@@ -174,13 +175,18 @@ public class LowStockRefillRequestServiceTests
 
         await db.SaveChangesAsync();
 
+        var factory = new TestDbContextFactory(options);
+        var assignmentService = new VolunteerAssignmentService();
         var chat = new FakeChatNotificationService();
 
-        var repository = new RefillRequestRepository(db);
+        var repository = new RefillRequestRepository(
+            db,
+            factory,
+            assignmentService);
 
         var service = new LowStockRefillRequestService(
             repository,
-            new VolunteerAssignmentService(),
+            assignmentService,
             chat);
 
         return new TestContext(
@@ -191,6 +197,24 @@ public class LowStockRefillRequestServiceTests
             volunteer,
             chat,
             service);
+    }
+
+    private sealed class TestDbContextFactory(
+        DbContextOptions<AppDbContext> options)
+        : IDbContextFactory<AppDbContext>
+    {
+        public AppDbContext CreateDbContext()
+        {
+            return new AppDbContext(options);
+        }
+
+        public Task<AppDbContext> CreateDbContextAsync(
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return Task.FromResult(CreateDbContext());
+        }
     }
 
     private sealed class FakeChatNotificationService
@@ -255,28 +279,26 @@ public class LowStockRefillRequestServiceTests
         }
     }
 
+    [Fact]
+    public async Task Database_ShouldRejectDuplicateActiveRequests()
+    {
+        await using var test = await CreateTestContextAsync(
+            includeVolunteer: false);
 
-[Fact]
-public async Task Database_ShouldRejectDuplicateActiveRequests()
-{
-    await using var test = await CreateTestContextAsync(
-        includeVolunteer: false);
+        var firstRequest = new RefillRequest(
+            test.Office.Id,
+            test.Product.Id);
 
-    var firstRequest = new RefillRequest(
-        test.Office.Id,
-        test.Product.Id);
+        var secondRequest = new RefillRequest(
+            test.Office.Id,
+            test.Product.Id);
 
-    var secondRequest = new RefillRequest(
-        test.Office.Id,
-        test.Product.Id);
+        test.Db.RefillRequests.Add(firstRequest);
+        await test.Db.SaveChangesAsync();
 
-    test.Db.RefillRequests.Add(firstRequest);
-    await test.Db.SaveChangesAsync();
+        test.Db.RefillRequests.Add(secondRequest);
 
-    test.Db.RefillRequests.Add(secondRequest);
-
-    await Assert.ThrowsAsync<DbUpdateException>(
-        () => test.Db.SaveChangesAsync());
-}
-
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => test.Db.SaveChangesAsync());
+    }
 }

@@ -1,5 +1,6 @@
 
 using SnackCounter.Domain.Entities;
+using SnackCounter.Application.Models;
 
 namespace SnackCounter.Application.Interfaces;
 
@@ -37,4 +38,26 @@ public interface IRefillRequestRepository
 
     Task SaveChangesAsync(
         CancellationToken cancellationToken);
+
+    Task<RefillRequest?> GetByIdAsync(
+    Guid requestId,
+    CancellationToken cancellationToken);
+
+    Task<List<RefillRequest>> GetAssignedRequestsAsync(
+    CancellationToken cancellationToken);
+
+    Task UpdateOfficeRotationAsync(
+    Guid officeId,
+    Guid volunteerId,
+    CancellationToken cancellationToken);
+
+    Task<List<Employee>> GetAllVolunteersAsync(
+    Guid officeId,
+    CancellationToken cancellationToken);
+
+
+    Task<AtomicVolunteerAssignmentResult> TryReassignExpiredRequestAsync(
+    Guid requestId,
+    long expectedConcurrencyVersion,
+    CancellationToken cancellationToken);
 }

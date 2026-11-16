@@ -6,9 +6,9 @@ public class Office
     public Guid Id { get; private set; }
 
     public string Name { get; private set; } = string.Empty;
-
+    public long RotationVersion { get; private set; }
     public string CurrencyCode { get; private set; } = string.Empty;
-
+    public Guid? LastAssignedVolunteerId { get; private set; }
     public ICollection<Employee> Employees { get; private set; }
         = new List<Employee>();
 
@@ -26,4 +26,13 @@ public class Office
         Name = name.Trim();
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
     }
+
+   public void UpdateVolunteerRotation(Guid volunteerId)
+{
+    if (volunteerId == Guid.Empty)
+        throw new ArgumentException("Volunteer ID is required.");
+
+    LastAssignedVolunteerId = volunteerId;
+    RotationVersion++;
+}
 }

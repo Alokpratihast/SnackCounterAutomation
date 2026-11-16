@@ -11,28 +11,34 @@ public class VolunteerAssignmentService : IVolunteerAssignmentService
         IEnumerable<Employee> employees,
         Guid? lastAssignedVolunteerId = null)
     {
-        var eligibleVolunteers = employees
+        // Keep all volunteers to preserve rotation order,
+        // including those who are currently unavailable.
+        var allVolunteers = employees
             .Where(e =>
                 e.OfficeId == officeId &&
-                e.IsVolunteer &&
-                e.IsAvailable)
+                e.IsVolunteer)
             .OrderBy(e => e.Name)
+            .ThenBy(e => e.Id)
             .ToList();
 
-        if (eligibleVolunteers.Count == 0)
+        if (allVolunteers.Count == 0)
             return null;
 
-        if (lastAssignedVolunteerId is null)
-            return eligibleVolunteers[0];
+        var lastIndex = lastAssignedVolunteerId.HasValue
+            ? allVolunteers.FindIndex(
+                e => e.Id == lastAssignedVolunteerId.Value)
+            : -1;
 
-        var lastIndex = eligibleVolunteers.FindIndex(
-            e => e.Id == lastAssignedVolunteerId.Value);
+        // Check each volunteer after the last assigned volunteer.
+        for (var offset = 1; offset <= allVolunteers.Count; offset++)
+        {
+            var index = (lastIndex + offset) % allVolunteers.Count;
+            var candidate = allVolunteers[index];
 
-        if (lastIndex < 0)
-            return eligibleVolunteers[0];
+            if (candidate.IsAvailable)
+                return candidate;
+        }
 
-        var nextIndex = (lastIndex + 1) % eligibleVolunteers.Count;
-
-        return eligibleVolunteers[nextIndex];
+        return null;
     }
 }

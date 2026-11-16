@@ -119,5 +119,13 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<BudgetReservation>()
             .Property(r => r.Amount)
             .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Office>()
+            .Property(o => o.RotationVersion)
+            .IsConcurrencyToken();
+
+        modelBuilder.Entity<RefillRequest>()
+            .Property(r => r.ConcurrencyVersion)
+            .IsConcurrencyToken();
     }
 }

@@ -66,4 +66,69 @@ public class VolunteerAssignmentTests
 
         Assert.Null(result);
     }
+
+
+
+[Fact]
+public void SelectNextVolunteer_ShouldContinueRotation_WhenLastAssignedVolunteerIsUnavailable()
+{
+    var officeId = Guid.NewGuid();
+
+    var amit = new Employee(
+        "Amit", "amit@example.com", officeId, true);
+
+    var neha = new Employee(
+        "Neha", "neha@example.com", officeId, true);
+
+    var rahul = new Employee(
+        "Rahul", "rahul@example.com", officeId, true);
+
+    amit.UpdateAvailability(false);
+
+    var service = new VolunteerAssignmentService();
+
+    var result = service.SelectNextVolunteer(
+        officeId,
+        new[] { amit, neha, rahul },
+        amit.Id);
+
+    Assert.NotNull(result);
+    Assert.Equal(neha.Id, result.Id);
+}
+
+[Fact]
+public void SelectNextVolunteer_ShouldContinueToNextVolunteer_InRoundRobinOrder()
+{
+    var officeId = Guid.NewGuid();
+
+    var amit = new Employee(
+        "Amit", "amit@example.com", officeId, true);
+
+    var neha = new Employee(
+        "Neha", "neha@example.com", officeId, true);
+
+    var rahul = new Employee(
+        "Rahul", "rahul@example.com", officeId, true);
+
+    var service = new VolunteerAssignmentService();
+
+    var first = service.SelectNextVolunteer(
+        officeId,
+        new[] { amit, neha, rahul });
+
+    var second = service.SelectNextVolunteer(
+        officeId,
+        new[] { amit, neha, rahul },
+        first!.Id);
+
+    var third = service.SelectNextVolunteer(
+        officeId,
+        new[] { amit, neha, rahul },
+        second!.Id);
+
+    Assert.Equal(amit.Id, first.Id);
+    Assert.Equal(neha.Id, second.Id);
+    Assert.Equal(rahul.Id, third.Id);
+}
+
 }
