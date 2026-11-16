@@ -252,4 +252,36 @@ app.MapPut("/api/inventory/{officeId:guid}/{productId:guid}/count", async (
     return Results.Ok(new { inventory.OfficeId, inventory.ProductId, inventory.CurrentQuantity, inventory.MinimumQuantity, inventory.LastUpdatedAtUtc });
 });
 
+
+app.MapPut("/api/volunteers/{volunteerId:guid}/availability", async (
+    Guid volunteerId, UpdateVolunteerAvailabilityRequest request,
+    AppDbContext db, CancellationToken cancellationToken) =>
+{
+    var volunteer = await db.Employees.SingleOrDefaultAsync(x => x.Id == volunteerId, cancellationToken);
+    if (volunteer is null) return Results.NotFound("Volunteer not found.");
+    try
+    {
+        volunteer.UpdateAvailability(request.IsAvailable);
+        await db.SaveChangesAsync(cancellationToken);
+        return Results.Ok(new { volunteer.Id, volunteer.IsAvailable });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(ex.Message); }
+});
+
+app.MapGet("/api/purchases/{purchaseId:guid}/reimbursement", async (
+    Guid purchaseId, IReimbursementRepository repository, CancellationToken cancellationToken) =>
+{
+    var data = await repository.GetClaimContextAsync(purchaseId, cancellationToken);
+    if (data.Claim is null) return Results.NotFound();
+    return Results.Ok(new
+    {
+        data.Claim.PurchaseId,
+        data.Claim.Status,
+        data.Claim.ExternalClaimId,
+        data.Claim.SubmittedAtUtc,
+        data.Claim.ReimbursedAtUtc,
+        data.Claim.FailureReason
+    });
+});
+
 app.Run();
