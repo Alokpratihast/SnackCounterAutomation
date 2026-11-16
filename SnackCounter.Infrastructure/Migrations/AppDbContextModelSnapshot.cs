@@ -255,6 +255,10 @@ namespace SnackCounter.Infrastructure.Migrations
                     b.Property<Guid?>("AssignedVolunteerId")
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
