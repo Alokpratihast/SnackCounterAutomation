@@ -6,6 +6,8 @@ using SnackCounter.Infrastructure.Data;
 using SnackCounter.Infrastructure.Data.Repositories;
 using SnackCounter.Infrastructure.Integrations.Chat;
 using SnackCounter.Infrastructure.Integrations.HR;
+using SnackCounter.Infrastructure.Reporting;
+using SnackCounter.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +41,12 @@ builder.Services.AddScoped<IRefillRequestRepository, RefillRequestRepository>();
 builder.Services.AddScoped<LowStockRefillRequestService>();
 builder.Services.AddScoped<VolunteerAcceptanceService>();
 builder.Services.AddScoped<AssignmentReassignmentService>();
+builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
+builder.Services.AddScoped<IReimbursementRepository, ReimbursementRepository>();
+builder.Services.AddScoped<ReimbursementSubmissionService>();
+builder.Services.AddScoped<PurchaseService>();
+builder.Services.AddScoped<BudgetConfigurationService>();
+builder.Services.AddScoped<IMonthlyReportService, MonthlyReportService>();
 builder.Services.AddEndpointsApiExplorer();
 
 
@@ -153,5 +161,53 @@ app.MapPost("/api/refill-requests/process-expired", async (
     });
 });
 
+
+
+app.MapPost("/api/refill-requests/{requestId:guid}/purchase", async (
+    Guid requestId, RecordPurchaseRequest request, PurchaseService service,
+    CancellationToken cancellationToken) =>
+{
+    var result = await service.RecordAsync(new(
+        requestId, request.VolunteerId, request.Quantity, request.UnitPrice,
+        request.CurrencyCode, request.ReceiptUrl), cancellationToken);
+    return result.Status switch
+    {
+        RecordPurchaseStatus.Purchased => Results.Created($"/api/purchases/{result.PurchaseId}", result),
+        RecordPurchaseStatus.RequestNotFound => Results.NotFound(result),
+        RecordPurchaseStatus.InventoryNotFound => Results.NotFound(result),
+        RecordPurchaseStatus.BudgetNotFound or RecordPurchaseStatus.BudgetExceeded or RecordPurchaseStatus.DuplicatePurchase => Results.Conflict(result),
+        RecordPurchaseStatus.RequestNotAccepted or RecordPurchaseStatus.WrongVolunteer or RecordPurchaseStatus.VolunteerNotEligible => Results.Conflict(result),
+        RecordPurchaseStatus.CurrencyMismatch => Results.BadRequest(result),
+        _ => Results.BadRequest(result)
+    };
+});
+
+app.MapPost("/api/purchases/{purchaseId:guid}/retry-hr-claim", async (
+    Guid purchaseId, ReimbursementSubmissionService service, CancellationToken cancellationToken) =>
+{
+    var submitted = await service.SubmitAsync(purchaseId, cancellationToken);
+    return submitted ? Results.Ok(new { Status = "Submitted" }) : Results.Conflict(new { Status = "Pending", Message = "Claim is not available or HR submission failed." });
+});
+
+app.MapPut("/api/budgets", async (
+    ConfigureBudgetRequest request, BudgetConfigurationService service, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var budget = await service.ConfigureAsync(request.OfficeId, request.Year, request.Month, request.MonthlyLimit, cancellationToken);
+        return Results.Ok(new { budget.OfficeId, budget.Year, budget.Month, budget.MonthlyLimit, budget.CurrencyCode, budget.ActualSpent, budget.ReservedAmount, budget.AvailableBudget });
+    }
+    catch (KeyNotFoundException ex) { return Results.NotFound(ex.Message); }
+    catch (ArgumentException ex) { return Results.BadRequest(ex.Message); }
+    catch (InvalidOperationException ex) { return Results.Conflict(ex.Message); }
+});
+
+app.MapPost("/api/reports/monthly/{officeId:guid}", async (
+    Guid officeId, MonthlyReportRequest request, IMonthlyReportService service, CancellationToken cancellationToken) =>
+{
+    var report = await service.GetAsync(officeId, request.Year, request.Month,
+        request.ReportingCurrency, request.RatesToReportingCurrency, cancellationToken);
+    return report is null ? Results.NotFound() : Results.Ok(report);
+});
 
 app.Run();
