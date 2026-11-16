@@ -10,6 +10,14 @@ Content-Type: application/json
 
 {}
 
+### Mark a volunteer available/unavailable
+PUT {{SnackCounter.API_HostAddress}}/api/volunteers/{{volunteerId}}/availability
+Content-Type: application/json
+
+{
+  "isAvailable": false
+}
+
 ### Update a physical inventory count (use IDs from seed response)
 PUT {{SnackCounter.API_HostAddress}}/api/inventory/{{officeId}}/{{productId}}/count
 Content-Type: application/json
@@ -60,6 +68,9 @@ Content-Type: application/json
 
 ### Retry a pending HR claim
 POST {{SnackCounter.API_HostAddress}}/api/purchases/{{purchaseId}}/retry-hr-claim
+
+### Read reimbursement status
+GET {{SnackCounter.API_HostAddress}}/api/purchases/{{purchaseId}}/reimbursement
 
 ### Simulate HR reimbursement callback
 POST {{SnackCounter.API_HostAddress}}/api/purchases/{{purchaseId}}/hr-reimbursed
