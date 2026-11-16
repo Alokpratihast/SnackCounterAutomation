@@ -43,7 +43,8 @@ public sealed class PurchaseRepository : IPurchaseRepository
             return new(RecordPurchaseStatus.VolunteerNotEligible);
 
         var office = await db.Offices.SingleAsync(x => x.Id == request.OfficeId, cancellationToken);
-        var product = await db.Products.SingleAsync(x => x.Id == request.ProductId && x.IsActive, cancellationToken);
+        var product = await db.Products.SingleOrDefaultAsync(x => x.Id == request.ProductId && x.IsActive, cancellationToken);
+        if (product is null) return new(RecordPurchaseStatus.ProductNotFound);
         var inventory = await db.Inventories.SingleOrDefaultAsync(
             x => x.OfficeId == request.OfficeId && x.ProductId == request.ProductId, cancellationToken);
         if (inventory is null) return new(RecordPurchaseStatus.InventoryNotFound);
