@@ -8,6 +8,6 @@ public interface IHRReimbursementService
         string currencyCode,
         string description,
         string receiptUrl,
-        string employeeEmail,
+        string employeeId,
         CancellationToken cancellationToken = default);
 }
