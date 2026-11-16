@@ -42,6 +42,7 @@ HR accepts employee ID, amount, currency, description and receipt image. Approva
 ## API surface
 
 - `POST /api/demo/seed`
+- `PUT /api/volunteers/{volunteerId}/availability`
 - `PUT /api/inventory/{officeId}/{productId}/count`
 - `POST /api/refill-requests/low-stock`
 - `POST /api/refill-requests/{requestId}/accept`
@@ -49,6 +50,7 @@ HR accepts employee ID, amount, currency, description and receipt image. Approva
 - `PUT /api/budgets`
 - `POST /api/refill-requests/{requestId}/purchase`
 - `POST /api/purchases/{purchaseId}/retry-hr-claim`
+- `GET /api/purchases/{purchaseId}/reimbursement`
 - `POST /api/purchases/{purchaseId}/hr-reimbursed`
 - `POST /api/purchases/{purchaseId}/hr-rejected`
 - `POST /api/reports/monthly/{officeId}`
