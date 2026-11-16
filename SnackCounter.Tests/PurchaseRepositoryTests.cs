@@ -62,7 +62,7 @@ public sealed class PurchaseRepositoryTests
 
         Assert.Equal(RecordPurchaseStatus.Purchased,
             (await fixture.Repository.RecordPurchaseAsync(command, CancellationToken.None)).Status);
-        Assert.Equal(RecordPurchaseStatus.RequestNotAccepted,
+        Assert.Equal(RecordPurchaseStatus.DuplicatePurchase,
             (await fixture.Repository.RecordPurchaseAsync(command, CancellationToken.None)).Status);
         Assert.Single(await fixture.Db.Purchases.ToListAsync());
     }
