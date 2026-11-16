@@ -19,8 +19,19 @@ public sealed class DemoSeedService
 
         await SeedOfficeAsync(oslo, 15, 6000m, cancellationToken);
         await SeedOfficeAsync(bengaluru, 20, 15000m, cancellationToken);
-        return new { Offices = new[] { new { oslo.Id, oslo.Name, oslo.CurrencyCode }, new { bengaluru.Id, bengaluru.Name, bengaluru.CurrencyCode } },
-            OsloVolunteerCount = 15, BengaluruVolunteerCount = 20,
+        var officeSummaries = await _db.Offices
+            .Where(x => x.Id == oslo.Id || x.Id == bengaluru.Id)
+            .Select(x => new { x.Id, x.Name, x.CurrencyCode })
+            .ToListAsync(cancellationToken);
+        var productSummaries = await _db.Inventories
+            .Where(x => x.OfficeId == oslo.Id || x.OfficeId == bengaluru.Id)
+            .Select(x => new { x.OfficeId, x.ProductId, ProductName = x.Product.Name, x.CurrentQuantity, x.MinimumQuantity })
+            .ToListAsync(cancellationToken);
+        var volunteers = await _db.Employees
+            .Where(x => x.OfficeId == oslo.Id || x.OfficeId == bengaluru.Id)
+            .Select(x => new { x.Id, x.Name, x.Email, x.OfficeId })
+            .ToListAsync(cancellationToken);
+        return new { Offices = officeSummaries, Products = productSummaries, Volunteers = volunteers,
             OsloMonthlyBudget = 6000m, BengaluruMonthlyBudget = 15000m };
     }
 
